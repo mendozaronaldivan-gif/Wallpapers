@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ronckrack-Design — Fondos de pantalla generados por IA</title>
+<title>Roncrack Design — Fondos de pantalla generados por IA</title>
 <meta name="description" content="Fondos de pantalla generados por IA para computadora y celular. Busca, previsualiza y descarga en un clic.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -185,7 +185,9 @@
   }
   .thumb-wrap[data-cat="phone"]{ aspect-ratio: 9/16; }
   .thumb-wrap[data-cat="pc"]{ aspect-ratio: 16/9; }
-  .thumb-wrap canvas{ width: 100%; height: 100%; display: block; }
+  /* CAMBIO: antes el selector apuntaba a <canvas>; ahora la miniatura es una <img> real,
+     así que se le da el mismo tamaño y se usa object-fit para que no se deforme. */
+  .thumb-wrap img{ width: 100%; height: 100%; display: block; object-fit: cover; }
 
   .dl-btn{
     position: absolute;
@@ -299,60 +301,30 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
 <script>
-  // ---------- Datos de la colección ----------
+  // ======================================================================
+  // CAMBIO PRINCIPAL: ya no se generan gradientes con canvas. Ahora la
+  // colección es un array de objetos JSON con { nombre, ruta, cat } y cada
+  // tarjeta simplemente referencia la imagen real con <img src="ruta">.
+  //
+  // Para usar tus propias imágenes: sube tus archivos a una carpeta del
+  // repo (ej. "img/") y reemplaza "ruta" por la ruta real de cada archivo.
+  // Si agregas o quitas categorías, solo necesitas que "cat" coincida con
+  // los valores usados en las pestañas: "pc" o "phone".
+  // ======================================================================
   const WALLPAPERS = [
-    { id: 1,  title: "Deriva violeta",     cat: "pc",    hueA: 262, hueB: 192, tags: "abstracto violeta calma frio" },
-    { id: 2,  title: "Amanecer sintético",  cat: "pc",    hueA: 22,  hueB: 332, tags: "calido atardecer minimal" },
-    { id: 3,  title: "Malla cuántica",      cat: "pc",    hueA: 178, hueB: 140, tags: "verde geometria futurista" },
-    { id: 4,  title: "Horizonte de cobre",  cat: "pc",    hueA: 28,  hueB: 8,   tags: "calido metalico atardecer" },
-    { id: 5,  title: "Niebla eléctrica",    cat: "pc",    hueA: 214, hueB: 282, tags: "azul nocturno frio" },
-    { id: 6,  title: "Pulso solar",         cat: "pc",    hueA: 42,  hueB: 352, tags: "naranja energia calido" },
-    { id: 7,  title: "Gota de neón",        cat: "phone", hueA: 302, hueB: 190, tags: "neon rosa frio" },
-    { id: 8,  title: "Bruma nocturna",      cat: "phone", hueA: 242, hueB: 262, tags: "azul nocturno calma" },
-    { id: 9,  title: "Coral digital",       cat: "phone", hueA: 352, hueB: 22,  tags: "coral calido rosa" },
-    { id: 10, title: "Vapor esmeralda",     cat: "phone", hueA: 152, hueB: 172, tags: "verde esmeralda frio" },
-    { id: 11, title: "Aurora fría",         cat: "phone", hueA: 202, hueB: 282, tags: "azul violeta aurora frio" },
-    { id: 12, title: "Ámbar suave",         cat: "phone", hueA: 40,  hueB: 62,  tags: "amarillo calido suave" },
+    //{ nombre: "Deriva violeta",    ruta: "img/deriva-violeta.jpg",    cat: "pc" },
+    //{ nombre: "Amanecer sintético", ruta: "img/amanecer-sintetico.jpg", cat: "pc" },
+    //{ nombre: "Malla cuántica",    ruta: "img/malla-cuantica.jpg",    cat: "pc" },
+    //{ nombre: "Horizonte de cobre", ruta: "img/horizonte-de-cobre.jpg", cat: "pc" },
+    //{ nombre: "Niebla eléctrica",  ruta: "img/niebla-electrica.jpg",  cat: "pc" },
+    //{ nombre: "Pulso solar",       ruta: "img/pulso-solar.jpg",       cat: "pc" },
+    { nombre: "Gota de neón",      ruta: "img/Arrastrado_por_una_chica_de_pelo_negro_en_parque_con_luces_en_los_arboles.png",      cat: "phone" },
+    { nombre: "Bruma nocturna",    ruta: "img/bruma-nocturna.jpg",    cat: "phone" },
+    { nombre: "Coral digital",     ruta: "img/coral-digital.jpg",     cat: "phone" },
+    { nombre: "Vapor esmeralda",   ruta: "img/vapor-esmeralda.jpg",   cat: "phone" },
+    { nombre: "Aurora fría",       ruta: "img/aurora-fria.jpg",       cat: "phone" },
+    { nombre: "Ámbar suave",       ruta: "img/ambar-suave.jpg",       cat: "phone" },
   ];
-
-  const RES = { pc: { w: 1920, h: 1080, label: "1920 × 1080" }, phone: { w: 1080, h: 1920, label: "1080 × 1920" } };
-
-  // ---------- PRNG con semilla, para que el thumbnail y la descarga coincidan ----------
-  function mulberry32(seed){
-    return function(){
-      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
-      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  }
-
-  function paintWallpaper(ctx, w, h, hueA, hueB, seed){
-    const rand = mulberry32(seed);
-    ctx.clearRect(0, 0, w, h);
-    ctx.fillStyle = `hsl(${hueA}, 28%, 7%)`;
-    ctx.fillRect(0, 0, w, h);
-
-    ctx.filter = `blur(${Math.round(w * 0.06)}px)`;
-    ctx.globalCompositeOperation = "screen";
-
-    const blobs = 4;
-    for(let i = 0; i < blobs; i++){
-      const hue = i % 2 === 0 ? hueA : hueB;
-      const cx = rand() * w;
-      const cy = rand() * h;
-      const r = w * (0.28 + rand() * 0.3);
-      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-      grad.addColorStop(0, `hsla(${hue}, 85%, 62%, 0.85)`);
-      grad.addColorStop(1, `hsla(${hue}, 85%, 62%, 0)`);
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.filter = "none";
-    ctx.globalCompositeOperation = "source-over";
-  }
 
   // ---------- Construir la cuadrícula ----------
   const grid = document.getElementById("grid");
@@ -360,40 +332,41 @@
   const countEl = document.getElementById("count");
 
   WALLPAPERS.forEach(w => {
-    const res = RES[w.cat];
     const card = document.createElement("article");
     card.className = "card";
     card.dataset.cat = w.cat;
-    card.dataset.title = w.title.toLowerCase();
-    card.dataset.tags = w.tags;
+    // CAMBIO: el buscador ahora filtra directamente sobre "nombre" (ya no
+    // hay campo "tags" generado a mano; si luego agregas etiquetas reales
+    // en el JSON, solo hay que sumarlas aquí, ej: `${w.nombre} ${w.tags}`.
+    card.dataset.title = w.nombre.toLowerCase();
 
     card.innerHTML = `
       <div class="thumb-wrap" data-cat="${w.cat}">
-        <canvas width="${w.cat === 'pc' ? 480 : 270}" height="${w.cat === 'pc' ? 270 : 480}"></canvas>
-        <button class="dl-btn" aria-label="Descargar ${w.title}">
+        <img src="${w.ruta}" alt="${w.nombre}" loading="lazy">
+        <button class="dl-btn" aria-label="Descargar ${w.nombre}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg>
         </button>
       </div>
       <div class="card-info">
-        <h3>${w.title}</h3>
-        <span class="res">${res.label}</span>
+        <h3>${w.nombre}</h3>
+        <span class="res"></span>
       </div>`;
 
-    const canvas = card.querySelector("canvas");
-    paintWallpaper(canvas.getContext("2d"), canvas.width, canvas.height, w.hueA, w.hueB, w.id * 97);
+    // CAMBIO: la resolución ya no viene de una tabla fija (RES); se lee
+    // directamente del archivo real una vez que termina de cargar.
+    const img = card.querySelector("img");
+    const resLabel = card.querySelector(".res");
+    img.addEventListener("load", () => {
+      resLabel.textContent = `${img.naturalWidth} × ${img.naturalHeight}`;
+    });
 
+    // CAMBIO: la descarga ya no dibuja un canvas en memoria; simplemente
+    // apunta al archivo real con el atributo "download" del enlace.
     card.querySelector(".dl-btn").addEventListener("click", () => {
-      const full = document.createElement("canvas");
-      full.width = res.w; full.height = res.h;
-      paintWallpaper(full.getContext("2d"), res.w, res.h, w.hueA, w.hueB, w.id * 97);
-      full.toBlob(blob => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `bruma-${w.title.toLowerCase().replace(/\s+/g, "-")}.png`;
-        a.click();
-        URL.revokeObjectURL(url);
-      }, "image/png");
+      const a = document.createElement("a");
+      a.href = w.ruta;
+      a.download = w.ruta.split("/").pop();
+      a.click();
     });
 
     grid.appendChild(card);
