@@ -353,7 +353,7 @@
 
   WALLPAPERS.forEach(w => {
     const card = document.createElement("article");
-    const nombre = nombreDesdeRuta(w.ruta, "img/", "-", " ");
+    const nombre = nombreDesdeRuta(w.ruta, "img/", "_", " ");
     card.className = "card";
     card.dataset.cat = w.cat;
     // CAMBIO: el buscador ahora filtra directamente sobre "nombre" (ya no
