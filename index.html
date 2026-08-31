@@ -318,13 +318,33 @@
     //{ nombre: "Horizonte de cobre", ruta: "img/horizonte-de-cobre.jpg", cat: "pc" },
     //{ nombre: "Niebla eléctrica",  ruta: "img/niebla-electrica.jpg",  cat: "pc" },
     //{ nombre: "Pulso solar",       ruta: "img/pulso-solar.jpg",       cat: "pc" },
-    { nombre: "Gota de neón",      ruta: "img/Arrastrado_por_una_chica_de_pelo_negro_en_parque_con_luces_en_los_arboles.png",      cat: "phone" },
-    { nombre: "Bruma nocturna",    ruta: "img/bruma-nocturna.jpg",    cat: "phone" },
-    { nombre: "Coral digital",     ruta: "img/coral-digital.jpg",     cat: "phone" },
-    { nombre: "Vapor esmeralda",   ruta: "img/vapor-esmeralda.jpg",   cat: "phone" },
-    { nombre: "Aurora fría",       ruta: "img/aurora-fria.jpg",       cat: "phone" },
-    { nombre: "Ámbar suave",       ruta: "img/ambar-suave.jpg",       cat: "phone" },
+    { ruta: "img/Arrastrado_por_una_chica_de_pelo_negro_en_parque_con_luces_en_los_arboles.png",      cat: "phone" },
+    { ruta: "img/bruma-nocturna.jpg",    cat: "phone" },
+    { ruta: "img/coral-digital.jpg",     cat: "phone" },
+    { ruta: "img/vapor-esmeralda.jpg",   cat: "phone" },
+    { ruta: "img/aurora-fria.jpg",       cat: "phone" },
+    { ruta: "img/ambar-suave.jpg",       cat: "phone" },
   ];
+
+  // NUEVO: obtiene el nombre a mostrar a partir de la ruta de la imagen.
+  //   ruta          -> ruta completa del archivo, ej. "img/deriva-violeta.jpg"
+  //   carpeta       -> carpeta contenedora a eliminar, ej. "img/"
+  //   caracterABuscar   -> caracter del nombre de archivo que se reemplaza, ej. "-"
+  //   caracterReemplazo -> por qué caracter se reemplaza, ej. " "
+  // Devuelve el nombre "humano" sin carpeta, sin extensión y con el
+  // caracter ya reemplazado, ej. "deriva violeta".
+  function nombreDesdeRuta(ruta, carpeta, caracterABuscar, caracterReemplazo){
+    // 1. Quita la carpeta contenedora del inicio de la ruta.
+    let archivo = ruta.startsWith(carpeta) ? ruta.slice(carpeta.length) : ruta;
+    // 2. Por si acaso queda alguna barra suelta al inicio.
+    archivo = archivo.replace(/^\/+/, "");
+    // 3. Quita la extensión (todo lo que va después del último punto).
+    const puntoIdx = archivo.lastIndexOf(".");
+    if(puntoIdx > -1) archivo = archivo.slice(0, puntoIdx);
+    // 4. Reemplaza el caracter indicado (ej. "-" por " ").
+    archivo = archivo.split(caracterABuscar).join(caracterReemplazo);
+    return archivo;
+  }
 
   // ---------- Construir la cuadrícula ----------
   const grid = document.getElementById("grid");
@@ -333,22 +353,23 @@
 
   WALLPAPERS.forEach(w => {
     const card = document.createElement("article");
+    const nombre = nombreDesdeRuta(w.ruta, "img/", "-", " ");
     card.className = "card";
     card.dataset.cat = w.cat;
     // CAMBIO: el buscador ahora filtra directamente sobre "nombre" (ya no
     // hay campo "tags" generado a mano; si luego agregas etiquetas reales
     // en el JSON, solo hay que sumarlas aquí, ej: `${w.nombre} ${w.tags}`.
-    card.dataset.title = w.nombre.toLowerCase();
+    card.dataset.title = nombre.toLowerCase();
 
     card.innerHTML = `
       <div class="thumb-wrap" data-cat="${w.cat}">
-        <img src="${w.ruta}" alt="${w.nombre}" loading="lazy">
-        <button class="dl-btn" aria-label="Descargar ${w.nombre}">
+        <img src="${w.ruta}" alt="${nombre}" loading="lazy">
+        <button class="dl-btn" aria-label="Descargar ${nombre}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg>
         </button>
       </div>
       <div class="card-info">
-        <h3>${w.nombre}</h3>
+        <h3>${nombre}</h3>
         <span class="res"></span>
       </div>`;
 
