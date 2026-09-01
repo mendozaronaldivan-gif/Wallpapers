@@ -208,6 +208,20 @@
     padding-bottom: 80px;
   }
 
+  /* NUEVO: las tarjetas de wallpapers de "Computadora" son 16:9 (horizontales),
+     así que ocupan 2 columnas del grid en vez de 1. De lo contrario, el
+     mismo ancho angosto que usan las de celular (9:16) las dejaba con una
+     altura muy chica y la imagen se veía encuadrada/apretada. */
+  .card[data-cat="pc"]{
+    grid-column: span 2;
+  }
+  /* En pantallas angostas, donde el grid termina teniendo 1 sola columna,
+     el span 2 no tiene efecto negativo, pero lo forzamos explícitamente
+     para evitar que intente ocupar 2 columnas inexistentes. */
+  @media (max-width: 560px){
+    .card[data-cat="pc"]{ grid-column: span 1; }
+  }
+
   .card{
     background: var(--surface);
     border: 1px solid var(--line);
